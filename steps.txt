@@ -1,0 +1,10 @@
+1. First Create Virtual environment and activate it
+2. Install django 
+3. Start the project using django-admin startproject ProjectName
+4. Create the database using python mange.py migrate inside your project
+5. python .\manage.py createsuperuser
+6. python .\manage.py runserver
+7. Create application python .\manage.py startapp AppName
+8. Add this app name inside InstalledApps inside settings file of project
+9. Install djangorestframework and include rest_framework in installed_apps
+10. python .\manage.py makemigrations
