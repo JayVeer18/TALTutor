@@ -36,8 +36,33 @@ class App:
 
     def init_session_state(self):
         # Streamlit page configuration
-        st.set_page_config(layout="wide")
-        # st.cache()
+        st.set_page_config(layout="wide",initial_sidebar_state="collapsed")
+        # Display the logo and title
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center;">
+                <img src="https://www.kindpng.com/picc/m/72-726998_north-south-foundation-logo-hd-png-download.png" width="50" style="margin-right: 10px;">
+                <h3 style="color: #4169E1;">North South Foundation Presents</h3>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.sidebar.markdown("# Welcome to Drona, the TALTutor App")
+        st.sidebar.markdown(self.section_name)
+        # Add multiple empty strings to create space above the footer
+        st.sidebar.markdown("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+
+        # Footer with an image and text
+        image_url = 'https://play-lh.googleusercontent.com/TJ5FL4km1GSK_MvO8Yy9Ad0GezFLYhSk4eUFGCWhaj_07iKjhW6Zp2hS33Rtb3TokVTU=s64-rw'
+        st.sidebar.markdown(
+            f"""
+                   <div style='text-align: center; padding-top: 20px;'>
+                       <img src="{image_url}" alt="Logo" style="width: 50px;">
+                       <p>Powered by <b>TOUCH-A-LIFE Foundation</b></p>
+                   </div>
+                   """,
+            unsafe_allow_html=True
+        )
 
         if f"messages_{self.session_key}" not in st.session_state:
             st.session_state[f"messages_{self.session_key}"] = []
@@ -78,36 +103,8 @@ class App:
         #     st.error(f"Failed to load data: {response.content}")
 
     def run(self):
-        # Display the logo and title
-        st.markdown(
-            """
-            <div style="display: flex; align-items: center;">
-                <img src="https://www.kindpng.com/picc/m/72-726998_north-south-foundation-logo-hd-png-download.png" width="50" style="margin-right: 10px;">
-                <h3 style="color: #4169E1;">North South Foundation Presents</h1>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.sidebar.markdown("# Welcome to Drona, the TALTutor App")
-        st.sidebar.markdown(self.section_name)
-        # Add multiple empty strings to create space above the footer
-        st.sidebar.markdown("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-
-        # Footer with an image and text
-        image_url = 'https://play-lh.googleusercontent.com/TJ5FL4km1GSK_MvO8Yy9Ad0GezFLYhSk4eUFGCWhaj_07iKjhW6Zp2hS33Rtb3TokVTU=s64-rw'
-        st.sidebar.markdown(
-            f"""
-            <div style='text-align: center; padding-top: 20px;'>
-                <img src="{image_url}" alt="Logo" style="width: 50px;">
-                <p>Powered by <b>TOUCH-A-LIFE Foundation</b></p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
         # Layout for video, summary, and chatbox
-        video_col, chat_col = st.columns([0.45, 0.55])
+        video_col, chat_col = st.columns([0.40, 0.60])
         # Display the video
         with video_col:
             st.markdown('<h4 style="color: #008080;">&emsp;{}</h4>'.format(self.section_name), unsafe_allow_html=True)
@@ -115,8 +112,8 @@ class App:
             parsed_url = urlparse(self.video_url)
             if 'baps.app.box.com' == parsed_url.netloc:
                 st.components.v1.html(
-                    f""" <iframe src="{self.video_url}" width="600" height="700" allow="autoplay"></iframe>""",
-                    height=700,
+                    f""" <iframe src="{self.video_url}" width="500" height="500" allow="autoplay"></iframe>""",
+                    height=500,
                 )
             else:
                 st.video(self.video_url)
@@ -124,7 +121,7 @@ class App:
         # Display the chat history with scrollable container
         with chat_col:
             # Create two columns
-            col1, col2 = st.columns([1, 0.2])  # Adjust the column widths as needed
+            col1, col2 = st.columns([1, 0.3])  # Adjust the column widths as needed
 
             with col1:
                 st.markdown('<h4 style="color: #008080;">&emsp;{}</h4>'.format('TALTutor chatBot'),
@@ -135,31 +132,41 @@ class App:
 
             query = st.chat_input("Ask questions about The video")
 
-            # Inject JavaScript to set the scroll position to the top of the container on load
+            # Inject JavaScript to set the scroll position to the bottom of the container when new messages are added
             scroll_js = """
                 <script>
-                // Wait until the DOM is fully loaded
+                // Function to scroll to the bottom of the chat container
+                function scrollToBottom() {
+                    var chatContainer = document.querySelector('.st-key-chat_history');
+                    if (chatContainer) {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                }
+
+                // Use a MutationObserver to detect changes to the chat history container
                 document.addEventListener("DOMContentLoaded", function() {
-                    // Get the chat history container by class name
                     var chatContainer = document.querySelector('.st-key-chat_history');
 
                     if (chatContainer) {
-                        // Set the scroll position to the top
-                        chatContainer.scrollTop = 0;
+                        // Scroll to bottom initially
+                        scrollToBottom();
+
+                        // Observe changes and scroll to bottom on updates
+                        var observer = new MutationObserver(scrollToBottom);
+                        observer.observe(chatContainer, { childList: true });
                     }
                 });
                 </script>
             """
             st.markdown(scroll_js, unsafe_allow_html=True)
 
-            with st.container(height=650, key='chat_history'):
+            with st.container(height=500, key='chat_history'):
                 # # Display chat history after loading existing messages
                 self.display_chat_history()
 
                 # Query input
                 if query:
                     st.chat_message("user").markdown(query)
-
                     # Add user message to chat history
                     st.session_state[f"messages_{self.session_key}"].append({"role": "user", "content": query})
 
