@@ -15,5 +15,5 @@ relative_file_path = os.path.join(script_dir,"..", "files", "de_intro.pdf")  # "
 # Normalize the path to handle any redundant separators
 file_path = os.path.normpath(relative_file_path)
 
-app = App("### Lecture : Final", file_path, "https://www.youtube.com/watch?v=6o7b9yyhH7k", "Final")
+app = App("Lecture : Final", file_path, "https://www.youtube.com/watch?v=6o7b9yyhH7k", "Final")
 app.run()

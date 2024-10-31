@@ -3,6 +3,16 @@ import streamlit as st
 from chatbot import Chatbot
 from dotenv import load_dotenv
 import os
+from urllib.parse import urlparse
+
+# Get the directory of the current script (where this Python file is located)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Specify the path of the README.md file
+env_path = os.path.normpath(os.path.join(script_dir,".env"))
+
+# load environment variables from .env file
+load_dotenv(dotenv_path=env_path, verbose=True, override=True)
 
 class App:
     def __init__(self, section_name, file_path, video_url, session_key):
@@ -11,9 +21,6 @@ class App:
         self.file_path = file_path
         self.video_url = video_url
         self.session_key = session_key
-
-        # load environment variables from .env file
-        load_dotenv()
         self.api_key = os.environ.get("OPENAI_API_KEY")
 
         # Initialize chatbot
@@ -30,31 +37,11 @@ class App:
     def init_session_state(self):
         # Streamlit page configuration
         st.set_page_config(layout="wide")
-        st.cache()
+        # st.cache()
 
         if f"messages_{self.session_key}" not in st.session_state:
             st.session_state[f"messages_{self.session_key}"] = []
-        self.load()
-
-    def chat_with_document(self):
-        # Display chat history before the input box
-        self.display_chat_history()
-
-        # Query input
-        if query := st.chat_input("Ask questions about The video"):
-            st.chat_message("user").markdown(query)
-            
-            # Add user message to chat history
-            st.session_state[f"messages_{self.session_key}"].append({"role": "user", "content": query})
-
-            with st.spinner("Querying... please wait..."), st.chat_message("assistant"):
-                response = self.chatbot.invoke(query)
-                st.markdown(response)
-
-            # Add assistant response to chat history
-            st.session_state[f"messages_{self.session_key}"].append({"role": "assistant", "content": response})
-            
-     
+            self.load()
 
     def display_chat_history(self):
         for message in st.session_state[f"messages_{self.session_key}"]:
@@ -85,12 +72,23 @@ class App:
             # self.file_path = data['file_path']
             # self.video_url = data['video_url']
             st.session_state[f"messages_{self.session_key}"] = data['messages']
-            st.success("App instance and messages loaded successfully!")
-        else:
-            st.error(f"Failed to load data: {response.content}")
+            print("App instance and messages loaded successfully!")
+            # st.success("App instance and messages loaded successfully!")
+        # else:
+        #     st.error(f"Failed to load data: {response.content}")
 
     def run(self):
-        st.markdown('# School Name')
+        # Display the logo and title
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center;">
+                <img src="https://www.kindpng.com/picc/m/72-726998_north-south-foundation-logo-hd-png-download.png" width="50" style="margin-right: 10px;">
+                <h3 style="color: #4169E1;">North South Foundation Presents</h1>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
         st.sidebar.markdown("# Welcome to Drona, the TALTutor App")
         st.sidebar.markdown(self.section_name)
         # Add multiple empty strings to create space above the footer
@@ -110,18 +108,72 @@ class App:
 
         # Layout for video, summary, and chatbox
         video_col, chat_col = st.columns([0.45, 0.55])
-
         # Display the video
         with video_col:
-            st.markdown(self.section_name)
-            st.video(self.video_url)
+            st.markdown('<h4 style="color: #008080;">&emsp;{}</h4>'.format(self.section_name), unsafe_allow_html=True)
+
+            parsed_url = urlparse(self.video_url)
+            if 'baps.app.box.com' == parsed_url.netloc:
+                st.components.v1.html(
+                    f""" <iframe src="{self.video_url}" width="600" height="700" allow="autoplay"></iframe>""",
+                    height=700,
+                )
+            else:
+                st.video(self.video_url)
 
         # Display the chat history with scrollable container
         with chat_col:
-            with st.container(height=600):
-                st.markdown('### TALTutor chatBot')
-                self.chat_with_document()
-            st.button('save chat',on_click=self.save_chat)
+            # Create two columns
+            col1, col2 = st.columns([1, 0.2])  # Adjust the column widths as needed
+
+            with col1:
+                st.markdown('<h4 style="color: #008080;">&emsp;{}</h4>'.format('TALTutor chatBot'),
+                            unsafe_allow_html=True)
+
+            with col2:
+                st.button('💾 Save Chat', on_click=self.save_chat)
+
+            query = st.chat_input("Ask questions about The video")
+
+            # Inject JavaScript to set the scroll position to the top of the container on load
+            scroll_js = """
+                <script>
+                // Wait until the DOM is fully loaded
+                document.addEventListener("DOMContentLoaded", function() {
+                    // Get the chat history container by class name
+                    var chatContainer = document.querySelector('.st-key-chat_history');
+
+                    if (chatContainer) {
+                        // Set the scroll position to the top
+                        chatContainer.scrollTop = 0;
+                    }
+                });
+                </script>
+            """
+            st.markdown(scroll_js, unsafe_allow_html=True)
+
+            with st.container(height=650, key='chat_history'):
+                # # Display chat history after loading existing messages
+                self.display_chat_history()
+
+                # Query input
+                if query:
+                    st.chat_message("user").markdown(query)
+
+                    # Add user message to chat history
+                    st.session_state[f"messages_{self.session_key}"].append({"role": "user", "content": query})
+
+                    with st.spinner("Querying... please wait..."):
+                        response = self.chatbot.invoke(query)
+                        st.markdown(response)
+
+                    # Add assistant response to chat history
+                    st.session_state[f"messages_{self.session_key}"].append({"role": "assistant", "content": response})
+
+
+
+
+
 
 # Example usage
 # if __name__ == "__main__":
